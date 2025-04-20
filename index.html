@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puzzle Game - Canvas Buttons</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #111;
+    }
+    canvas {
+      display: block;
+      background: #222;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = 0, height = 0;
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      draw();
+    }
+
+    window.addEventListener('resize', () => {
+  resizeCanvas();
+  updateButtons();
+  draw();
+});
+    resizeCanvas();
+updateButtons();
+draw();
+
+    const gridSize = 3;
+    const tileSize = 80;
+    let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(false));
+    let log = "";
+    
+    let buttons = [];
+
+function updateButtons() {
+  buttons = [
+    { label: 'Restart', x: 20, y: height - 100, w: 100, h: 40, action: restartGame },
+    { label: 'Force Win', x: 140, y: height - 100, w: 120, h: 40, action: forceWin }
+  ];
+}
+      { label: "Restart", x: 20, y: height - 100, w: 100, h: 40, action: restartGame },
+      { label: "Force Win", x: 140, y: height - 100, w: 120, h: 40, action: forceWin }
+    ];
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw grid
+      const offsetX = width / 2 - (tileSize * gridSize) / 2;
+      const offsetY = height / 2 - (tileSize * gridSize) / 2;
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          ctx.fillStyle = grid[y][x] ? "#0f0" : "#444";
+          ctx.fillRect(offsetX + x * tileSize, offsetY + y * tileSize, tileSize - 5, tileSize - 5);
+        }
+      }
+
+      // Draw buttons
+      buttons.forEach(btn => {
+        ctx.fillStyle = "#333";
+        ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+        ctx.fillStyle = "#fff";
+        ctx.font = "16px sans-serif";
+        ctx.fillText(btn.label, btn.x + 10, btn.y + 25);
+      });
+
+      // Draw debug log
+      ctx.fillStyle = "#0f0";
+      ctx.fillRect(0, height - 30, width, 30);
+      ctx.fillStyle = "#000";
+      ctx.fillText(log, 10, height - 10);
+    }
+
+    function restartGame() {
+      grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(false));
+      log = "Restarted";
+      draw();
+    }
+
+    function forceWin() {
+      grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(true));
+      log = "Force Win";
+      draw();
+    }
+
+    function toggleTileAt(x, y) {
+      const offsetX = width / 2 - (tileSize * gridSize) / 2;
+      const offsetY = height / 2 - (tileSize * gridSize) / 2;
+      for (let gy = 0; gy < gridSize; gy++) {
+        for (let gx = 0; gx < gridSize; gx++) {
+          const tx = offsetX + gx * tileSize;
+          const ty = offsetY + gy * tileSize;
+          if (x > tx && x < tx + tileSize - 5 && y > ty && y < ty + tileSize - 5) {
+            grid[gy][gx] = !grid[gy][gx];
+            log = `Toggled (${gx},${gy})`;
+            draw();
+            checkWin();
+            return;
+          }
+        }
+      }
+    }
+
+    function checkWin() {
+      if (grid.flat().every(val => val)) {
+        log = "You Win!";
+        draw();
+      }
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Check buttons
+      for (const btn of buttons) {
+        if (x > btn.x && x < btn.x + btn.w && y > btn.y && y < btn.y + btn.h) {
+          btn.action();
+          return;
+        }
+      }
+
+      // Else check tiles
+      toggleTileAt(x, y);
+    });
+  </script>
+</body>
+</html>
