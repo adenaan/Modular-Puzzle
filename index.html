@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pattern Puzzle</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #gameCanvas {
+      background: #111;
+      margin-top: 20px;
+      touch-action: manipulation;
+    }
+    .button-container {
+      margin: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 16px;
+      border-radius: 6px;
+    }
+    #log {
+      margin-top: 10px;
+      color: lime;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="status">Ready</h2>
+  <h3 id="levelLabel">Level: 1</h3>
+  <canvas id="gameCanvas" width="300" height="300"></canvas>
+  <div class="button-container">
+    <button id="togglePattern">Toggle Pattern</button>
+  </div>
+  <div id="log"></div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const statusLabel = document.getElementById("status");
+    const levelLabel = document.getElementById("levelLabel");
+    const togglePatternBtn = document.getElementById("togglePattern");
+    const logBox = document.getElementById("log");
+
+    const gridSize = 3;
+    const tileSize = canvas.width / gridSize;
+    let tiles = [];
+    let pattern = [];
+    let showPattern = false;
+    let level = 1;
+
+    function log(msg) {
+      logBox.textContent = msg;
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
+          const index = row * gridSize + col;
+          const tile = tiles[index];
+          ctx.fillStyle = tile.on ? "#0f0" : "#222";
+          ctx.fillRect(col * tileSize, row * tileSize, tileSize - 2, tileSize - 2);
+        }
+      }
+    }
+
+    function createTiles() {
+      tiles = [];
+      for (let i = 0; i < gridSize * gridSize; i++) {
+        tiles.push({ on: false });
+      }
+    }
+
+    function generatePattern() {
+      pattern = [];
+      const numTiles = Math.min(4 + level, gridSize * gridSize - 1);
+      const indices = [...Array(gridSize * gridSize).keys()];
+      while (pattern.length < numTiles) {
+        const randIndex = indices.splice(Math.floor(Math.random() * indices.length), 1)[0];
+        pattern.push(randIndex);
+      }
+    }
+
+    function applyPattern() {
+      tiles.forEach((tile, i) => tile.on = pattern.includes(i));
+    }
+
+    function clearTiles() {
+      tiles.forEach(tile => tile.on = false);
+    }
+
+    function checkWin() {
+      for (let i = 0; i < tiles.length; i++) {
+        if (tiles[i].on !== pattern.includes(i)) return false;
+      }
+      return true;
+    }
+
+    canvas.addEventListener("click", (e) => {
+      if (showPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const col = Math.floor(x / tileSize);
+      const row = Math.floor(y / tileSize);
+      const index = row * gridSize + col;
+      tiles[index].on = !tiles[index].on;
+      drawGrid();
+
+      if (checkWin()) {
+        level++;
+        statusLabel.textContent = "You Win!";
+        levelLabel.textContent = "Level: " + level;
+        setTimeout(() => {
+          statusLabel.textContent = "Ready";
+          nextLevel();
+        }, 1000);
+      }
+    });
+
+    function nextLevel() {
+      createTiles();
+      generatePattern();
+      clearTiles();
+      drawGrid();
+    }
+
+    togglePatternBtn.addEventListener("click", () => {
+      showPattern = !showPattern;
+      if (showPattern) {
+        applyPattern();
+        drawGrid();
+        log("Showing pattern");
+      } else {
+        clearTiles();
+        drawGrid();
+        log("Pattern hidden");
+      }
+    });
+
+    // Init game
+    nextLevel();
+  </script>
+</body>
+</html>
