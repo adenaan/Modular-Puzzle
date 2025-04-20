@@ -1,0 +1,55 @@
+
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #111;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+}
+.game-container {
+    text-align: center;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-gap: 5px;
+    margin: 20px auto;
+}
+.tile {
+    width: 100px;
+    height: 100px;
+    background: #444;
+    border: 2px solid #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: #fff;
+    cursor: pointer;
+    user-select: none;
+}
+.tile.active {
+    background: #0f0;
+}
+.controls {
+    margin-top: 20px;
+}
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+.win-message {
+    font-size: 36px;
+    color: #0f0;
+    margin-top: 20px;
+    animation: pop 0.5s ease;
+}
+@keyframes pop {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
