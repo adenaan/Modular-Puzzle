@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tile Puzzle Game with Sound</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #000; color: #0f0; display: flex; flex-direction: column; align-items: center; }
+    canvas { background: #111; margin-top: 10px; }
+    #controls { margin: 10px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    button { background: #222; color: #0f0; border: 1px solid #0f0; padding: 10px 15px; cursor: pointer; }
+    button:active { background: #0f0; color: #000; }
+  </style>
+</head>
+<body>
+  <h2 id="level">Level: 1</h2>
+  <div id="controls">
+    <button id="togglePattern">Toggle Pattern</button>
+    <button id="restartBtn">Restart</button>
+  </div>
+  <canvas id="gameCanvas" width="300" height="300"></canvas>
+  <div id="log" style="color:#0f0; margin-top:10px;"></div>
+
+  <!-- Audio elements for sound effects -->
+  <audio id="tapSound" src="tap.mp3" preload="auto"></audio>
+  <audio id="winSound" src="win.mp3" preload="auto"></audio>
+  <audio id="gameOverSound" src="gameover.mp3" preload="auto"></audio>
+  <audio id="buttonSound" src="button.mp3" preload="auto"></audio>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const toggleBtn = document.getElementById("togglePattern");
+    const restartBtn = document.getElementById("restartBtn");
+    const tapSound = document.getElementById("tapSound");
+    const winSound = document.getElementById("winSound");
+    const gameOverSound = document.getElementById("gameOverSound");
+    const buttonSound = document.getElementById("buttonSound");
+    const levelDisplay = document.getElementById("level");
+    const logBox = document.getElementById("log");
+
+    let gridSize = 3;
+    let tileSize = canvas.width / gridSize;
+    let grid = [];
+    let pattern = [];
+    let showPattern = false;
+    let level = 1;
+
+    function playSound(sound) {
+      sound.currentTime = 0;
+      sound.play().catch(e => {});
+    }
+
+    function resetGrid() {
+      grid = [];
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          grid.push({ x, y, selected: false });
+        }
+      }
+    }
+
+    function generatePattern() {
+      pattern = [];
+      const count = Math.min(level + 1, gridSize * gridSize - 1);
+      const used = new Set();
+      while (pattern.length < count) {
+        let i = Math.floor(Math.random() * grid.length);
+        if (!used.has(i)) {
+          used.add(i);
+          pattern.push(i);
+        }
+      }
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      grid.forEach((tile, i) => {
+        let tx = tile.x * tileSize;
+        let ty = tile.y * tileSize;
+        ctx.fillStyle = tile.selected ? "#0f0" : "#333";
+        if (showPattern && pattern.includes(i)) ctx.fillStyle = "#00f";
+        ctx.fillRect(tx + 2, ty + 2, tileSize - 4, tileSize - 4);
+      });
+    }
+
+    function checkWin() {
+      const selected = grid.map(t => t.selected);
+      const target = grid.map((_, i) => pattern.includes(i));
+      return selected.every((val, i) => val === target[i]);
+    }
+
+    function advanceLevel() {
+      level++;
+      levelDisplay.textContent = "Level: " + level;
+      setupLevel();
+    }
+
+    function setupLevel() {
+      resetGrid();
+      generatePattern();
+      drawGrid();
+    }
+
+    canvas.addEventListener("click", e => {
+      if (showPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / tileSize);
+      const y = Math.floor((e.clientY - rect.top) / tileSize);
+      const index = y * gridSize + x;
+      if (index >= 0 && index < grid.length) {
+        grid[index].selected = !grid[index].selected;
+        playSound(tapSound);
+        drawGrid();
+        if (checkWin()) {
+          logBox.textContent = "You Win!";
+          playSound(winSound);
+          setTimeout(advanceLevel, 1000);
+        }
+      }
+    });
+
+    toggleBtn.addEventListener("click", () => {
+      playSound(buttonSound);
+      showPattern = !showPattern;
+      drawGrid();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      playSound(buttonSound);
+      level = 1;
+      levelDisplay.textContent = "Level: " + level;
+      setupLevel();
+      logBox.textContent = "";
+    });
+
+    setupLevel();
+  </script>
+</body>
+</html>
