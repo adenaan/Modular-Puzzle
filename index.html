@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mobile Puzzle Game with Timer</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: #0f0;
+      text-align: center;
+      user-select: none;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #222;
+    }
+    #buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px auto;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      background: #333;
+      color: #0f0;
+      border: 1px solid #0f0;
+      cursor: pointer;
+    }
+    #info {
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <div id="level">Level: 1</div>
+    <div id="timer">Time Left: 30</div>
+  </div>
+  <canvas id="gameCanvas" width="300" height="300"></canvas>
+  <div id="buttons">
+    <button id="togglePattern">Toggle Pattern</button>
+  </div>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const togglePatternBtn = document.getElementById("togglePattern");
+    const levelLabel = document.getElementById("level");
+    const timerLabel = document.getElementById("timer");
+
+    const gridSize = 3;
+    const tileSize = canvas.width / gridSize;
+    let tiles = [];
+    let targetPattern = [];
+    let showPattern = false;
+    let level = 1;
+    let timeLeft = 30;
+    let timerInterval;
+
+    function initTiles() {
+      tiles = [];
+      for (let y = 0; y < gridSize; y++) {
+        const row = [];
+        for (let x = 0; x < gridSize; x++) {
+          row.push(false);
+        }
+        tiles.push(row);
+      }
+    }
+
+    function generatePattern() {
+      targetPattern = [];
+      for (let y = 0; y < gridSize; y++) {
+        const row = [];
+        for (let x = 0; x < gridSize; x++) {
+          row.push(Math.random() < 0.5);
+        }
+        targetPattern.push(row);
+      }
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const isActive = showPattern ? targetPattern[y][x] : tiles[y][x];
+          ctx.fillStyle = isActive ? "#0f0" : "#000";
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize - 2, tileSize - 2);
+        }
+      }
+    }
+
+    function checkWin() {
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          if (tiles[y][x] !== targetPattern[y][x]) return false;
+        }
+      }
+      return true;
+    }
+
+    function handleClick(e) {
+      if (showPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / tileSize);
+      const y = Math.floor((e.clientY - rect.top) / tileSize);
+      if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+        tiles[y][x] = !tiles[y][x];
+        drawGrid();
+        if (checkWin()) {
+          clearInterval(timerInterval);
+          setTimeout(() => {
+            level++;
+            levelLabel.textContent = "Level: " + level;
+            startLevel();
+          }, 500);
+        }
+      }
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      timerLabel.textContent = "Time Left: " + timeLeft;
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        timerLabel.textContent = "Game Over";
+        setTimeout(() => {
+          level = 1;
+          levelLabel.textContent = "Level: 1";
+          startLevel();
+        }, 1500);
+      }
+    }
+
+    function startTimer() {
+      timeLeft = Math.max(5, 30 - (level - 1) * 2);
+      timerLabel.textContent = "Time Left: " + timeLeft;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function startLevel() {
+      initTiles();
+      generatePattern();
+      showPattern = false;
+      drawGrid();
+      startTimer();
+    }
+
+    togglePatternBtn.addEventListener("click", () => {
+      showPattern = !showPattern;
+      drawGrid();
+    });
+
+    canvas.addEventListener("click", handleClick);
+
+    startLevel();
+  </script>
+</body>
+</html>
