@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Pattern Puzzle</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #0f0;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto 0;
+      background: #111;
+      touch-action: manipulation;
+    }
+    #buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 10px;
+    }
+    button {
+      font-size: 16px;
+      padding: 10px 20px;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #0f0;
+      border-radius: 5px;
+    }
+    #log {
+      background: #060;
+      padding: 4px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="status">Ready</h2>
+  <canvas id="gameCanvas" width="320" height="320"></canvas>
+  <div id="buttons">
+    <button id="togglePattern">Toggle Pattern</button>
+    <button id="hintButton">Hint</button>
+  </div>
+  <div id="log"></div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const toggleBtn = document.getElementById('togglePattern');
+    const hintBtn = document.getElementById('hintButton');
+    const log = document.getElementById('log');
+    const status = document.getElementById('status');
+
+    const gridSize = 4;
+    const tileSize = canvas.width / gridSize;
+    let pattern = [];
+    let userTiles = [];
+    let showPattern = false;
+    let hintTile = null;
+
+    function logMessage(msg) {
+      log.textContent = msg;
+    }
+
+    function resetGame() {
+      userTiles = [];
+      hintTile = null;
+      pattern = [];
+      while (pattern.length < 4) {
+        let tile = [Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize)];
+        if (!pattern.some(t => t[0] === tile[0] && t[1] === tile[1])) {
+          pattern.push(tile);
+        }
+      }
+      drawGrid();
+      status.textContent = 'Ready';
+      logMessage('Game Reset');
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          let isSelected = userTiles.some(t => t[0] === x && t[1] === y);
+          let isInPattern = pattern.some(t => t[0] === x && t[1] === y);
+          let isHint = hintTile && hintTile[0] === x && hintTile[1] === y;
+          ctx.fillStyle = isSelected ? '#0f0' : '#222';
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize - 2, tileSize - 2);
+          if (showPattern && isInPattern) {
+            ctx.fillStyle = '#06f';
+            ctx.fillRect(x * tileSize + 5, y * tileSize + 5, tileSize - 10, tileSize - 10);
+          }
+          if (isHint) {
+            ctx.strokeStyle = '#ff0';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(x * tileSize + 2, y * tileSize + 2, tileSize - 4, tileSize - 4);
+          }
+        }
+      }
+    }
+
+    function handleClick(event) {
+      if (showPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((event.clientX - rect.left) / tileSize);
+      const y = Math.floor((event.clientY - rect.top) / tileSize);
+      if (x >= 0 && y >= 0 && x < gridSize && y < gridSize) {
+        const index = userTiles.findIndex(t => t[0] === x && t[1] === y);
+        if (index >= 0) {
+          userTiles.splice(index, 1);
+        } else {
+          userTiles.push([x, y]);
+        }
+        drawGrid();
+        checkWin();
+      }
+    }
+
+    function checkWin() {
+      if (userTiles.length !== pattern.length) return;
+      const win = userTiles.every(tile =>
+        pattern.some(p => p[0] === tile[0] && p[1] === tile[1])
+      );
+      if (win) {
+        status.textContent = 'You Win!';
+        logMessage('Correct Pattern!');
+      }
+    }
+
+    canvas.addEventListener('click', handleClick);
+    toggleBtn.addEventListener('click', () => {
+      showPattern = !showPattern;
+      drawGrid();
+    });
+
+    hintBtn.addEventListener('click', () => {
+      if (showPattern) return;
+      const unused = pattern.filter(
+        p => !userTiles.some(u => u[0] === p[0] && u[1] === p[1])
+      );
+      if (unused.length > 0) {
+        hintTile = unused[Math.floor(Math.random() * unused.length)];
+        drawGrid();
+        setTimeout(() => {
+          hintTile = null;
+          drawGrid();
+        }, 1000);
+      }
+    });
+
+    resetGame();
+  </script>
+</body>
+</html>
