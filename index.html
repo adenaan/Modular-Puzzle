@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Puzzle Grid Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+      background: #111;
+      margin: 0 auto;
+    }
+    #log {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: green;
+      color: black;
+      text-align: center;
+      font-weight: bold;
+    }
+    .game-btn {
+      padding: 10px 16px;
+      font-size: 14px;
+      background: #111;
+      color: #0f0;
+      border: 1px solid #0f0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="log">Ready</div>
+  <canvas id="gameCanvas" width="320" height="320"></canvas>
+  <div id="controls">
+    <button id="togglePattern" class="game-btn">Toggle Pattern</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const log = document.getElementById("log");
+    const toggleBtn = document.getElementById("togglePattern");
+
+    const gridSize = 4;
+    const tileSize = 70;
+    let grid = [];
+    let targetPattern = [];
+    let showPattern = false;
+    let inputEnabled = true;
+
+    function resetGrid() {
+      grid = Array(gridSize).fill().map(() => Array(gridSize).fill(false));
+    }
+
+    function generatePattern() {
+      targetPattern = Array(gridSize).fill().map(() => Array(gridSize).fill(false));
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          if (Math.random() > 0.7) {
+            targetPattern[y][x] = true;
+          }
+        }
+      }
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          let active = showPattern ? targetPattern[y][x] : grid[y][x];
+          ctx.fillStyle = active ? "#0f0" : "#333";
+          ctx.fillRect(x * tileSize + 10, y * tileSize + 10, tileSize - 2, tileSize - 2);
+        }
+      }
+    }
+
+    function getTileFromCoords(x, y) {
+      const rect = canvas.getBoundingClientRect();
+      const tx = Math.floor((x - rect.left) / tileSize);
+      const ty = Math.floor((y - rect.top) / tileSize);
+      return [tx, ty];
+    }
+
+    function toggleTile(x, y) {
+      if (x >= 0 && y >= 0 && x < gridSize && y < gridSize) {
+        grid[y][x] = !grid[y][x];
+      }
+    }
+
+    function checkWin() {
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          if (grid[y][x] !== targetPattern[y][x]) return false;
+        }
+      }
+      return true;
+    }
+
+    canvas.addEventListener("click", (e) => {
+      if (!inputEnabled || showPattern) return;
+      const [x, y] = getTileFromCoords(e.clientX, e.clientY);
+      toggleTile(x, y);
+      drawGrid();
+      if (checkWin()) {
+        log.innerText = "You Win!";
+        inputEnabled = false;
+        setTimeout(() => {
+          resetGrid();
+          generatePattern();
+          inputEnabled = true;
+          log.innerText = "Next Level";
+          drawGrid();
+        }, 1500);
+      }
+    });
+
+    toggleBtn.addEventListener("click", () => {
+      showPattern = !showPattern;
+      drawGrid();
+    });
+
+    resetGrid();
+    generatePattern();
+    drawGrid();
+  </script>
+</body>
+</html>
