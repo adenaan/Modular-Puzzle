@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  canvas {
+    border: 2px solid #444;
+    background: #111;
+    touch-action: manipulation;
+  }
+</style>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puzzle Game - Multiple Patterns</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background: #111;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="320" height="480"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let grid = [];
+    const gridSize = 3;
+    const tileSize = 100;
+    const spacing = 10;
+    let offsetX, offsetY;
+    let win = false;
+    let targetPattern = [];
+
+    const patterns = [
+      // Center only
+      [
+        [false, false, false],
+        [false, true, false],
+        [false, false, false]
+      ],
+      // Plus shape
+      [
+        [false, true, false],
+        [true, true, true],
+        [false, true, false]
+      ],
+      // Corners
+      [
+        [true, false, true],
+        [false, false, false],
+        [true, false, true]
+      ],
+      // Full outer ring
+      [
+        [true, true, true],
+        [true, false, true],
+        [true, true, true]
+      ]
+    ];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      offsetX = (canvas.width - (tileSize * gridSize + spacing * (gridSize - 1))) / 2;
+      offsetY = 80;
+      createGrid();
+      draw();
+    }
+
+    let showPattern = true;
+let maxMoves = 8;
+let movesLeft = maxMoves;
+
+function createGrid() {
+  movesLeft = maxMoves;
+      grid = [];
+      for (let r = 0; r < gridSize; r++) {
+        let row = [];
+        for (let c = 0; c < gridSize; c++) {
+          row.push({ active: false });
+        }
+        grid.push(row);
+      }
+      win = false;
+      targetPattern = JSON.parse(JSON.stringify(patterns[Math.floor(Math.random() * patterns.length)]));
+    }
+
+    function checkWin() {
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          if (grid[r][c].active !== targetPattern[r][c]) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    function draw() {
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const tile = grid[r][c];
+          const x = offsetX + c * (tileSize + spacing);
+          const y = offsetY + r * (tileSize + spacing);
+          ctx.fillStyle = tile.active ? "lime" : "#444";
+          ctx.fillRect(x, y, tileSize, tileSize);
+          ctx.strokeStyle = "#fff";
+          ctx.strokeRect(x, y, tileSize, tileSize);
+        }
+      }
+
+      
+      // Draw Reset button
+      ctx.fillStyle = "#444";
+      ctx.fillRect(50, canvas.height - 100, 120, 40);
+      ctx.fillStyle = "#fff";
+      ctx.font = "20px sans-serif";
+      ctx.textAlign = "left"; ctx.fillText("Reset", 60, canvas.height - 72);
+
+      // Draw Toggle Pattern button
+      ctx.fillStyle = "#444";
+      ctx.fillRect(190, canvas.height - 100, 180, 40);
+      ctx.fillStyle = "#fff";
+      ctx.textAlign = "left"; ctx.fillText("Toggle Pattern", 200, canvas.height - 72);
+    
+      ctx.fillStyle = "#444";
+      ctx.fillRect(50, canvas.height - 100, 120, 40);
+      ctx.fillStyle = "#fff";
+      ctx.font = "20px sans-serif";
+      ctx.textAlign = "left"; ctx.fillText("Reset", 60, canvas.height - 72);
+
+      
+      
+      // Draw visual target pattern (top right)
+      if (showPattern) {
+    
+      const miniTile = 20;
+      const miniSpacing = 4;
+      const startX = canvas.width - (gridSize * (miniTile + miniSpacing)) - 20;
+      const startY = 20;
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const tx = startX + c * (miniTile + miniSpacing);
+          const ty = startY + r * (miniTile + miniSpacing);
+          ctx.fillStyle = targetPattern[r][c] ? "#0f0" : "#333";
+          ctx.fillRect(tx, ty, miniTile, miniTile);
+          ctx.strokeStyle = "#666";
+          ctx.strokeRect(tx, ty, miniTile, miniTile);
+        }
+      }
+
+            }
+
+      
+      // Show win text
+      if (!win && movesLeft === 0) {
+        ctx.fillStyle = "#fff";
+        ctx.font = "24px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Out of Moves!", canvas.width / 2, 40);
+      } else if (!win) {
+        ctx.fillStyle = "#fff";
+        ctx.font = "24px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Moves left: " + movesLeft, canvas.width / 2, 40);
+      }
+      } else if (movesLeft === 0) {
+        ctx.fillText("Out of Moves!", canvas.width / 2, 40);
+      } else {
+        ctx.fillText("Moves left: " + movesLeft, canvas.width / 2, 40);
+      }
+    
+      if (win) {
+        ctx.fillStyle = "#0f0";
+        ctx.font = "bold 28px sans-serif";
+        ctx.fillText("You Win!", canvas.width / 2 - 60, 50);
+      }
+    }
+
+    canvas.addEventListener("click", function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Check grid
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const tx = offsetX + c * (tileSize + spacing);
+          const ty = offsetY + r * (tileSize + spacing);
+          if (x > tx && x < tx + tileSize && y > ty && y < ty + tileSize) {
+            grid[r][c].active = !grid[r][c].active;
+            win = checkWin();
+            draw();
+            return;
+          }
+        }
+      }
+
+      
+      // Check Reset button
+      if (x > 50 && x < 170 && y > canvas.height - 100 && y < canvas.height - 60) {
+        createGrid();
+        draw();
+        return;
+      }
+
+      // Check Toggle Pattern button
+      if (x > 190 && x < 370 && y > canvas.height - 100 && y < canvas.height - 60) {
+        showPattern = !showPattern;
+        draw();
+        return;
+      }
+    
+      if (x > 50 && x < 170 && y > canvas.height - 100 && y < canvas.height - 60) {
+        createGrid();
+        draw();
+      }
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
+
+
+window.onload = () => {
+  createGrid();
+  draw();
+};
