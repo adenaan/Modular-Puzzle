@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puzzle Canvas Safe Test</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background: #111;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      draw();
+    }
+
+    function draw() {
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Clear and background
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw one "tile"
+      ctx.fillStyle = "lime";
+      ctx.fillRect(50, 100, 100, 100);
+      ctx.strokeStyle = "#fff";
+      ctx.strokeRect(50, 100, 100, 100);
+
+      // Draw one button
+      ctx.fillStyle = "#444";
+      ctx.fillRect(50, h - 100, 120, 40);
+      ctx.fillStyle = "#fff";
+      ctx.font = "20px sans-serif";
+      ctx.fillText("Test Button", 60, h - 72);
+    }
+
+    canvas.addEventListener("click", function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (x > 50 && x < 170 && y > canvas.height - 100 && y < canvas.height - 60) {
+        alert("Button clicked!");
+      }
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
