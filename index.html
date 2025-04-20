@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pattern Puzzle</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: black;
+      color: white;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #111;
+    }
+    .button-bar {
+      margin-top: 10px;
+    }
+    button {
+      font-size: 1rem;
+      padding: 10px 20px;
+      margin: 5px;
+    }
+    .label {
+      margin-top: 10px;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="status">Ready</h1>
+  <canvas id="gameCanvas" width="320" height="320"></canvas>
+  <div class="button-bar">
+    <button id="togglePattern">Toggle Pattern</button>
+    <button id="undoBtn">Undo</button>
+  </div>
+  <div class="label">Level: <span id="levelLabel">1</span></div>
+  <div class="label">Moves: <span id="moveCounter">0</span></div>
+  <div class="label">Score: <span id="scoreCounter">0</span></div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const status = document.getElementById('status');
+    const levelLabel = document.getElementById('levelLabel');
+    const moveCounter = document.getElementById('moveCounter');
+    const scoreCounter = document.getElementById('scoreCounter');
+
+    const gridSize = 4;
+    const tileSize = canvas.width / gridSize;
+    let level = 1;
+    let score = 0;
+    let moveLimit = 5;
+    let movesLeft = moveLimit;
+    let showingPattern = false;
+
+    let grid = [];
+    let pattern = [];
+    let selected = [];
+    let undoStack = [];
+
+    function initGrid() {
+      grid = [];
+      selected = [];
+      undoStack = [];
+      for (let y = 0; y < gridSize; y++) {
+        let row = [];
+        for (let x = 0; x < gridSize; x++) {
+          row.push(false);
+        }
+        grid.push(row);
+        selected.push([...row]);
+      }
+    }
+
+    function generatePattern(level) {
+      const count = Math.min(level + 2, gridSize * gridSize - 1);
+      let newPattern = new Set();
+      while (newPattern.size < count) {
+        const rand = Math.floor(Math.random() * gridSize * gridSize);
+        newPattern.add(rand);
+      }
+      pattern = Array.from(newPattern);
+    }
+
+    function drawGrid(showPattern = false) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const index = y * gridSize + x;
+          if (showPattern && pattern.includes(index)) {
+            ctx.fillStyle = 'lime';
+          } else if (selected[y][x]) {
+            ctx.fillStyle = 'green';
+          } else {
+            ctx.fillStyle = 'gray';
+          }
+          ctx.fillRect(x * tileSize + 2, y * tileSize + 2, tileSize - 4, tileSize - 4);
+        }
+      }
+    }
+
+    canvas.addEventListener('click', (e) => {
+      if (showingPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / tileSize);
+      const y = Math.floor((e.clientY - rect.top) / tileSize);
+      if (x >= 0 && y >= 0 && x < gridSize && y < gridSize) {
+        selected[y][x] = !selected[y][x];
+        undoStack.push([x, y]);
+        movesLeft--;
+        moveCounter.textContent = movesLeft;
+        drawGrid();
+        checkWin();
+      }
+    });
+
+    function checkWin() {
+      const selectedPattern = [];
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          if (selected[y][x]) {
+            selectedPattern.push(y * gridSize + x);
+          }
+        }
+      }
+      const match = pattern.every(p => selectedPattern.includes(p)) && pattern.length === selectedPattern.length;
+      if (match) {
+        status.textContent = 'You Win!';
+        score += level * 10;
+        level++;
+        resetLevel();
+      } else if (movesLeft <= 0) {
+        status.textContent = 'Game Over';
+      }
+      scoreCounter.textContent = score;
+      levelLabel.textContent = level;
+    }
+
+    function resetLevel() {
+      movesLeft = moveLimit;
+      moveCounter.textContent = movesLeft;
+      initGrid();
+      generatePattern(level);
+      drawGrid();
+    }
+
+    document.getElementById('togglePattern').addEventListener('click', () => {
+      showingPattern = !showingPattern;
+      drawGrid(showingPattern);
+    });
+
+    document.getElementById('undoBtn').addEventListener('click', () => {
+      const last = undoStack.pop();
+      if (last) {
+        const [x, y] = last;
+        selected[y][x] = !selected[y][x];
+        movesLeft++;
+        moveCounter.textContent = movesLeft;
+        drawGrid();
+      }
+    });
+
+    // Start game
+    resetLevel();
+  </script>
+</body>
+</html>
