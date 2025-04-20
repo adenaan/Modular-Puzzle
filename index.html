@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Puzzle Game with Score</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: #0f0;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #000;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 1.2em;
+    }
+    #buttons {
+      margin: 10px;
+    }
+    button {
+      font-size: 1em;
+      padding: 10px 20px;
+      margin: 5px;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #0f0;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <div id="level">Level: 1</div>
+    <div id="score">Score: 0</div>
+    <div id="timer">Time: 30s</div>
+  </div>
+  <canvas id="gameCanvas" width="300" height="300"></canvas>
+  <div id="buttons">
+    <button id="togglePatternBtn">Toggle Pattern</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const levelLabel = document.getElementById('level');
+    const scoreLabel = document.getElementById('score');
+    const timerLabel = document.getElementById('timer');
+    const togglePatternBtn = document.getElementById('togglePatternBtn');
+
+    const gridSize = 3;
+    const tileSize = canvas.width / gridSize;
+    let tiles = [];
+    let pattern = [];
+    let showPattern = false;
+    let level = 1;
+    let score = 0;
+    let timer = 30;
+    let timerInterval = null;
+    let gameOver = false;
+
+    function initGrid() {
+      tiles = [];
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          tiles.push({ x, y, active: false });
+        }
+      }
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      tiles.forEach(tile => {
+        ctx.fillStyle = tile.active ? "#0f0" : "#222";
+        if (showPattern && pattern.some(p => p.x === tile.x && p.y === tile.y)) {
+          ctx.fillStyle = "#f00";
+        }
+        ctx.fillRect(tile.x * tileSize, tile.y * tileSize, tileSize - 2, tileSize - 2);
+      });
+    }
+
+    function generatePattern() {
+      pattern = [];
+      let count = level + 2;
+      while (pattern.length < count) {
+        const x = Math.floor(Math.random() * gridSize);
+        const y = Math.floor(Math.random() * gridSize);
+        if (!pattern.some(p => p.x === x && p.y === y)) {
+          pattern.push({ x, y });
+        }
+      }
+    }
+
+    function checkWin() {
+      for (const p of pattern) {
+        if (!tiles.find(t => t.x === p.x && t.y === p.y && t.active)) return false;
+      }
+      return true;
+    }
+
+    function updateGame() {
+      drawGrid();
+      if (checkWin()) {
+        clearInterval(timerInterval);
+        score += 100 + timer;
+        level++;
+        updateLabels();
+        setTimeout(startLevel, 1000);
+      }
+    }
+
+    function updateLabels() {
+      levelLabel.textContent = "Level: " + level;
+      scoreLabel.textContent = "Score: " + score;
+      timerLabel.textContent = "Time: " + timer + "s";
+    }
+
+    function startTimer() {
+      timer = Math.max(10, 30 - level * 2);
+      updateLabels();
+      timerInterval = setInterval(() => {
+        if (--timer <= 0) {
+          clearInterval(timerInterval);
+          timerLabel.textContent = "Game Over";
+          gameOver = true;
+        } else {
+          updateLabels();
+        }
+      }, 1000);
+    }
+
+    function startLevel() {
+      initGrid();
+      generatePattern();
+      drawGrid();
+      showPattern = true;
+      setTimeout(() => {
+        showPattern = false;
+        drawGrid();
+        startTimer();
+      }, 1000 + level * 200);
+    }
+
+    canvas.addEventListener('click', (e) => {
+      if (gameOver || showPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / tileSize);
+      const y = Math.floor((e.clientY - rect.top) / tileSize);
+      const tile = tiles.find(t => t.x === x && t.y === y);
+      if (tile) {
+        tile.active = !tile.active;
+        updateGame();
+      }
+    });
+
+    togglePatternBtn.addEventListener('click', () => {
+      showPattern = !showPattern;
+      drawGrid();
+    });
+
+    startLevel();
+  </script>
+</body>
+</html>
