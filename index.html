@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tile Tap Test</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 300px;
+      margin: 20px auto;
+    }
+    .tile {
+      background: #444;
+      border: 2px solid #666;
+      padding-top: 100%;
+      position: relative;
+    }
+    .tile.active {
+      background: #0f0;
+    }
+    .tile::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+    }
+    #log {
+      background: #222;
+      color: #0f0;
+      padding: 10px;
+      margin-top: 20px;
+      font-family: monospace;
+      border: 1px solid #0f0;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tap Grid</h1>
+  <p>Tap any tile to toggle it. Log should show below.</p>
+  <div class="grid" id="grid"></div>
+  <div id="log">[Ready]</div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const logBox = document.getElementById('log');
+    const tiles = [];
+
+    function log(msg) {
+      const line = document.createElement('div');
+      line.textContent = msg;
+      logBox.appendChild(line);
+    }
+
+    function toggleTile(i) {
+      const tile = tiles[i];
+      tile.classList.toggle('active');
+      log("Tapped tile " + i + " at " + new Date().toLocaleTimeString());
+    }
+
+    for (let i = 0; i < 9; i++) {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.setAttribute('onclick', `toggleTile(${i})`);
+      tile.setAttribute('ontouchstart', `toggleTile(${i})`);
+      grid.appendChild(tile);
+      tiles.push(tile);
+    }
+
+    log("Grid initialized.");
+  </script>
+</body>
+</html>
