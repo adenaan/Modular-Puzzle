@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Memory Tile Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(to bottom, #1e3c72, #2a5298);
+      color: #fff;
+      height: 100vh;
+    }
+    h1, h2 {
+      margin: 0.5em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 60px);
+      grid-gap: 10px;
+      margin-top: 1em;
+    }
+    .tile {
+      width: 60px;
+      height: 60px;
+      background-color: #444;
+      border: 2px solid #fff;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+    .tile.active {
+      background-color: #00e5ff;
+    }
+    .tile.correct {
+      background-color: #4caf50;
+    }
+    .tile.incorrect {
+      background-color: #f44336;
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 1em;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background-color: #fff;
+      color: #000;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <h1>Memory Tile Game</h1>
+  <h2 id="level">Level: 1</h2>
+  <h2 id="highLevel">Highest Level: 1</h2>
+  <div class="grid" id="tileGrid"></div>
+  <div class="buttons">
+    <button id="togglePatternBtn">Toggle Pattern</button>
+    <button id="restartBtn">Restart</button>
+  </div>
+  <script>
+    const grid = document.getElementById('tileGrid');
+    const levelLabel = document.getElementById('level');
+    const highLevelLabel = document.getElementById('highLevel');
+    const toggleBtn = document.getElementById('togglePatternBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const rows = 4;
+    const cols = 4;
+    const totalTiles = rows * cols;
+    let tiles = [];
+    let pattern = [];
+    let playerSelections = [];
+    let showingPattern = false;
+    let level = 1;
+    let highestLevel = 1;
+
+    function createGrid() {
+      grid.innerHTML = '';
+      tiles = [];
+      for (let i = 0; i < totalTiles; i++) {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        tile.dataset.index = i;
+        tile.addEventListener('click', handleTileClick);
+        grid.appendChild(tile);
+        tiles.push(tile);
+      }
+    }
+
+    function generatePattern() {
+      const numPattern = Math.min(level + 2, totalTiles - 1);
+      const indices = Array.from({ length: totalTiles }, (_, i) => i);
+      pattern = [];
+      for (let i = 0; i < numPattern; i++) {
+        const randomIndex = Math.floor(Math.random() * indices.length);
+        pattern.push(indices.splice(randomIndex, 1)[0]);
+      }
+    }
+
+    function showPattern() {
+      tiles.forEach((tile, index) => {
+        tile.classList.toggle('active', pattern.includes(index));
+      });
+      showingPattern = true;
+      setTimeout(() => {
+        tiles.forEach(tile => tile.classList.remove('active'));
+        showingPattern = false;
+      }, 1000 + level * 200);
+    }
+
+    function handleTileClick(e) {
+      if (showingPattern) return;
+      const index = parseInt(e.target.dataset.index);
+      if (pattern.includes(index)) {
+        if (!playerSelections.includes(index)) {
+          playerSelections.push(index);
+          e.target.classList.add('correct');
+          if (playerSelections.length === pattern.length) {
+            level++;
+            highestLevel = Math.max(highestLevel, level);
+            updateLabels();
+            startLevel();
+          }
+        }
+      } else {
+        e.target.classList.add('incorrect');
+        setTimeout(() => {
+          level = 1;
+          updateLabels();
+          startLevel();
+        }, 800);
+      }
+    }
+
+    function updateLabels() {
+      levelLabel.textContent = 'Level: ' + level;
+      highLevelLabel.textContent = 'Highest Level: ' + highestLevel;
+    }
+
+    function startLevel() {
+      createGrid();
+      playerSelections = [];
+      generatePattern();
+      showPattern();
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      if (!showingPattern) showPattern();
+    });
+
+    restartBtn.addEventListener('click', () => {
+      level = 1;
+      updateLabels();
+      startLevel();
+    });
+
+    updateLabels();
+    startLevel();
+  </script>
+</body>
+</html>
