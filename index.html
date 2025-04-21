@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puzzle Game</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #000; color: #0f0; text-align: center; }
+    canvas { display: block; margin: 20px auto; background: #111; }
+    .btn { background: none; border: 1px solid #0f0; color: #0f0; padding: 10px; margin: 5px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1 id="status">Ready</h1>
+  <canvas id="gameCanvas" width="300" height="300"></canvas>
+  <div>
+    <button class="btn" onclick="togglePattern()">Toggle Pattern</button>
+    <button class="btn" onclick="restartGame()">Restart</button>
+  </div>
+  <p>Level: <span id="level">1</span></p>
+  <p>Highest Level: <span id="highestLevel">1</span></p>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const gridSize = 3;
+    const tileSize = canvas.width / gridSize;
+    let pattern = [];
+    let userPattern = [];
+    let showingPattern = false;
+    let level = 1;
+    let highestLevel = localStorage.getItem("highestLevel") || 1;
+
+    document.getElementById("highestLevel").textContent = highestLevel;
+
+    canvas.addEventListener("click", (e) => {
+      if (showingPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const col = Math.floor(x / tileSize);
+      const row = Math.floor(y / tileSize);
+      const index = row * gridSize + col;
+      if (!userPattern.includes(index)) {
+        userPattern.push(index);
+        drawTiles();
+        checkWin();
+      }
+    });
+
+    function drawTiles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < gridSize * gridSize; i++) {
+        const x = (i % gridSize) * tileSize;
+        const y = Math.floor(i / gridSize) * tileSize;
+        ctx.fillStyle = pattern.includes(i) ? (showingPattern ? "#0f0" : "#000") : "#222";
+        ctx.fillRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
+        if (userPattern.includes(i)) {
+          ctx.strokeStyle = "#0f0";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
+        }
+      }
+    }
+
+    function togglePattern() {
+      showingPattern = !showingPattern;
+      drawTiles();
+    }
+
+    function generatePattern() {
+      const totalTiles = gridSize * gridSize;
+      pattern = [];
+      const patternCount = Math.min(level + 2, totalTiles - 1);
+      while (pattern.length < patternCount) {
+        const index = Math.floor(Math.random() * totalTiles);
+        if (!pattern.includes(index)) pattern.push(index);
+      }
+    }
+
+    function checkWin() {
+      if (pattern.length !== userPattern.length) return;
+      if (pattern.every(i => userPattern.includes(i))) {
+        document.getElementById("status").textContent = "You Win!";
+        level++;
+        userPattern = [];
+        if (level > highestLevel) {
+          highestLevel = level;
+          localStorage.setItem("highestLevel", level);
+          document.getElementById("highestLevel").textContent = highestLevel;
+        }
+        document.getElementById("level").textContent = level;
+        setTimeout(startGame, 1000);
+      }
+    }
+
+    function restartGame() {
+      level = 1;
+      highestLevel = localStorage.getItem("highestLevel") || 1;
+      document.getElementById("highestLevel").textContent = highestLevel;
+      document.getElementById("level").textContent = level;
+      startGame();
+    }
+
+    function startGame() {
+      userPattern = [];
+      generatePattern();
+      drawTiles();
+      document.getElementById("status").textContent = "Ready";
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
