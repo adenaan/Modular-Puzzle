@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+    }
+    canvas {
+      margin-top: 20px;
+      background: #222;
+    }
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      background: #444;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 16px;
+      border-radius: 4px;
+    }
+    button:active {
+      background: #666;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="levelLabel">Level 1</h2>
+  <canvas id="gameCanvas" width="300" height="300"></canvas>
+  <div class="controls">
+    <button id="toggleBtn">Toggle Pattern</button>
+    <button id="restartBtn">Restart</button>
+  </div>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const toggleBtn = document.getElementById("toggleBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const levelLabel = document.getElementById("levelLabel");
+
+    const gridSize = 3;
+    const tileSize = canvas.width / gridSize;
+    let tiles = [];
+    let targetPattern = [];
+    let showingPattern = false;
+    let level = 1;
+
+    function initGrid() {
+      tiles = [];
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          tiles.push({ x, y, active: false });
+        }
+      }
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const tile of tiles) {
+        ctx.fillStyle = tile.active ? "lime" : "black";
+        ctx.fillRect(tile.x * tileSize + 2, tile.y * tileSize + 2, tileSize - 4, tileSize - 4);
+      }
+    }
+
+    function generatePattern() {
+      targetPattern = [];
+      const count = Math.min(level + 1, gridSize * gridSize);
+      const available = [...tiles];
+      for (let i = 0; i < count; i++) {
+        const index = Math.floor(Math.random() * available.length);
+        targetPattern.push(available.splice(index, 1)[0]);
+      }
+    }
+
+    function showPattern() {
+      showingPattern = true;
+      for (const tile of tiles) tile.active = false;
+      for (const tile of targetPattern) {
+        const match = tiles.find(t => t.x === tile.x && t.y === tile.y);
+        if (match) match.active = true;
+      }
+      drawGrid();
+      setTimeout(() => {
+        for (const tile of tiles) tile.active = false;
+        showingPattern = false;
+        drawGrid();
+      }, 1000);
+    }
+
+    function checkWin() {
+      return targetPattern.every(tile => {
+        return tiles.find(t => t.x === tile.x && t.y === tile.y && t.active);
+      });
+    }
+
+    canvas.addEventListener("click", (e) => {
+      if (showingPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / tileSize);
+      const y = Math.floor((e.clientY - rect.top) / tileSize);
+      const tile = tiles.find(t => t.x === x && t.y === y);
+      if (tile) {
+        tile.active = !tile.active;
+        drawGrid();
+        if (checkWin()) {
+          level++;
+          levelLabel.textContent = "Level " + level;
+          setup();
+        }
+      }
+    });
+
+    function setup() {
+      initGrid();
+      generatePattern();
+      drawGrid();
+    }
+
+    toggleBtn.onclick = () => {
+      if (!showingPattern) showPattern();
+    };
+
+    restartBtn.onclick = () => {
+      level = 1;
+      levelLabel.textContent = "Level 1";
+      setup();
+    };
+
+    setup();
+  </script>
+</body>
+</html>
