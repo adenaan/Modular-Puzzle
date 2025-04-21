@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Puzzle Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: #0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      margin-top: 10px;
+      background: #222;
+      display: block;
+    }
+    #ui {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .button {
+      margin: 4px;
+      padding: 8px 16px;
+      background: #444;
+      color: #0f0;
+      border: 1px solid #0f0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .button:active {
+      background: #0f0;
+      color: #000;
+    }
+    #log {
+      margin-top: 10px;
+      background: #030;
+      padding: 5px 10px;
+      font-size: 14px;
+      width: 90%;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="status">Ready</h2>
+  <canvas id="gameCanvas" width="320" height="320"></canvas>
+  <div id="ui">
+    <div>
+      <button id="restartBtn" class="button">Restart</button>
+      <button id="toggleBtn" class="button">Toggle Pattern</button>
+    </div>
+    <div id="info">
+      <p>Moves: <span id="moves">5</span> | Time: <span id="timer">30</span>s</p>
+      <p>Level: <span id="level">1</span> | Highest: <span id="highest">1</span></p>
+    </div>
+  </div>
+  <div id="log">Log ready.</div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const status = document.getElementById("status");
+    const restartBtn = document.getElementById("restartBtn");
+    const toggleBtn = document.getElementById("toggleBtn");
+    const movesDisplay = document.getElementById("moves");
+    const timerDisplay = document.getElementById("timer");
+    const levelDisplay = document.getElementById("level");
+    const highestDisplay = document.getElementById("highest");
+    const logBox = document.getElementById("log");
+
+    const gridSize = 4;
+    const tileSize = canvas.width / gridSize;
+    let tiles = [], pattern = [], showPattern = false;
+    let moves = 5, level = 1, timer = 30, interval;
+    let highest = parseInt(localStorage.getItem("highestLevel")) || 1;
+
+    function log(msg) {
+      logBox.textContent = msg;
+    }
+
+    function drawTiles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const index = y * gridSize + x;
+          ctx.fillStyle = tiles[index] ? "#0f0" : "#333";
+          ctx.fillRect(x * tileSize + 2, y * tileSize + 2, tileSize - 4, tileSize - 4);
+        }
+      }
+    }
+
+    function generatePattern() {
+      const count = Math.min(level + 2, gridSize * gridSize - 1);
+      pattern = Array(gridSize * gridSize).fill(0);
+      const indices = Array.from({length: gridSize * gridSize}, (_, i) => i).sort(() => 0.5 - Math.random());
+      for (let i = 0; i < count; i++) {
+        pattern[indices[i]] = 1;
+      }
+    }
+
+    function showPatternVisual() {
+      showPattern = true;
+      drawPattern();
+      setTimeout(() => {
+        showPattern = false;
+        drawTiles();
+      }, 1000);
+    }
+
+    function drawPattern() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const index = y * gridSize + x;
+          ctx.fillStyle = pattern[index] ? "#0f0" : "#333";
+          ctx.fillRect(x * tileSize + 2, y * tileSize + 2, tileSize - 4, tileSize - 4);
+        }
+      }
+    }
+
+    function handleClick(x, y) {
+      if (showPattern || moves <= 0) return;
+      const index = y * gridSize + x;
+      tiles[index] = tiles[index] ? 0 : 1;
+      moves--;
+      movesDisplay.textContent = moves;
+      drawTiles();
+      checkWin();
+    }
+
+    function checkWin() {
+      if (tiles.join("") === pattern.join("")) {
+        level++;
+        if (level > highest) {
+          highest = level;
+          localStorage.setItem("highestLevel", highest);
+          highestDisplay.textContent = highest;
+        }
+        status.textContent = "You Win!";
+        setTimeout(startLevel, 1000);
+      } else if (moves === 0) {
+        status.textContent = "Game Over";
+      }
+    }
+
+    function startLevel() {
+      tiles = Array(gridSize * gridSize).fill(0);
+      generatePattern();
+      drawTiles();
+      showPatternVisual();
+      moves = 5;
+      timer = 30;
+      movesDisplay.textContent = moves;
+      levelDisplay.textContent = level;
+      timerDisplay.textContent = timer;
+      status.textContent = "Ready";
+    }
+
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / tileSize);
+      const y = Math.floor((e.clientY - rect.top) / tileSize);
+      handleClick(x, y);
+    });
+
+    toggleBtn.onclick = () => {
+      showPatternVisual();
+    };
+
+    restartBtn.onclick = () => {
+      level = 1;
+      highest = Math.max(highest, 1);
+      localStorage.setItem("highestLevel", highest);
+      highestDisplay.textContent = highest;
+      startLevel();
+    };
+
+    function countdown() {
+      interval = setInterval(() => {
+        if (timer > 0) {
+          timer--;
+          timerDisplay.textContent = timer;
+        } else {
+          clearInterval(interval);
+          status.textContent = "Game Over";
+        }
+      }, 1000);
+    }
+
+    // Initialize
+    highestDisplay.textContent = highest;
+    startLevel();
+    countdown();
+  </script>
+</body>
+</html>
