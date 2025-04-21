@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Puzzle Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    canvas {
+      margin-top: 10px;
+      background: #222;
+    }
+    .hud {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+    .buttons {
+      margin: 10px;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud" id="levelDisplay">Level: 1   Highest: 1</div>
+  <canvas id="gameCanvas" width="300" height="300"></canvas>
+  <div class="buttons">
+    <button id="togglePattern">Toggle Pattern</button>
+    <button id="restartBtn">Restart</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const levelDisplay = document.getElementById("levelDisplay");
+    const toggleBtn = document.getElementById("togglePattern");
+    const restartBtn = document.getElementById("restartBtn");
+
+    let gridSize = 3;
+    let tiles = [];
+    let pattern = [];
+    let showingPattern = false;
+    let currentLevel = 1;
+    let highestLevel = parseInt(localStorage.getItem("highestLevel")) || 1;
+
+    function updateLevelDisplay() {
+      levelDisplay.textContent = `Level: ${currentLevel}   Highest: ${highestLevel}`;
+    }
+
+    function generatePattern() {
+      const count = currentLevel + 2;
+      const patternSet = new Set();
+      while (patternSet.size < count && patternSet.size < gridSize * gridSize) {
+        patternSet.add(Math.floor(Math.random() * gridSize * gridSize));
+      }
+      pattern = Array.from(patternSet);
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const size = canvas.width / gridSize;
+      tiles.forEach((tile, i) => {
+        ctx.fillStyle = tile.active ? "#0f0" : "#333";
+        ctx.fillRect(tile.x, tile.y, size - 2, size - 2);
+      });
+    }
+
+    function setupGrid() {
+      tiles = [];
+      const size = canvas.width / gridSize;
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          tiles.push({
+            x: x * size,
+            y: y * size,
+            active: false
+          });
+        }
+      }
+    }
+
+    function showPattern() {
+      tiles.forEach((_, i) => {
+        tiles[i].active = pattern.includes(i);
+      });
+      drawGrid();
+    }
+
+    function hidePattern() {
+      tiles.forEach(tile => tile.active = false);
+      drawGrid();
+    }
+
+    function checkWin() {
+      const match = tiles.every((tile, i) => tile.active === pattern.includes(i));
+      if (match) {
+        currentLevel++;
+        if (currentLevel > highestLevel) {
+          highestLevel = currentLevel;
+          localStorage.setItem("highestLevel", highestLevel);
+        }
+        startLevel();
+      }
+    }
+
+    function startLevel() {
+      updateLevelDisplay();
+      setupGrid();
+      generatePattern();
+      showPattern();
+      setTimeout(() => {
+        hidePattern();
+        showingPattern = false;
+      }, 1000);
+    }
+
+    canvas.addEventListener("click", e => {
+      if (showingPattern) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const size = canvas.width / gridSize;
+      tiles.forEach((tile, i) => {
+        if (x >= tile.x && x < tile.x + size && y >= tile.y && y < tile.y + size) {
+          tile.active = !tile.active;
+        }
+      });
+      drawGrid();
+      checkWin();
+    });
+
+    toggleBtn.addEventListener("click", () => {
+      showingPattern = !showingPattern;
+      if (showingPattern) {
+        showPattern();
+      } else {
+        hidePattern();
+      }
+    });
+
+    restartBtn.addEventListener("click", () => {
+      currentLevel = 1;
+      updateLevelDisplay();
+      startLevel();
+    });
+
+    updateLevelDisplay();
+    startLevel();
+  </script>
+</body>
+</html>
